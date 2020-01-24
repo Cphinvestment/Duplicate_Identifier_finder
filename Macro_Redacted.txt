@@ -1,0 +1,227 @@
+Sub MPRStoSFDC()
+
+'Declare All Variables
+Dim myCell As Range
+Dim myRow As Long
+Dim mylastRow As Long
+Dim myRange As Range
+Dim myCol As Long
+Dim i As Long
+Dim wb As Workbook
+Dim SharepointAddress As String
+Dim LocalAddress As String
+Dim objNet As Object
+Dim FS As Object
+
+'open new WB
+Set wb = Workbooks.Add
+' Where you will enter Sharepoint location path
+SharepointAddress = ""
+
+'Save File
+wb.SaveAs Filename:=SharepointAddress & "MPRStoSFDC" & Format(Date, "yyyymmdd") & ".xlsm", FileFormat:=52
+
+' Pull ID from ADH enrollment list
+'Application.ScreenUpdating = False
+    Windows("AdherenceEnrollmentList.xlsx").Activate
+    Range(Cells(4, 1), Cells(4, 1).End(xlDown)).Copy '.Select
+    'Application.CutCopyMode = False
+'Paste into active WB
+    
+    Windows("MPRStoSFDC" & Format(Date, "yyyymmdd") & ".xlsm").Activate
+    Range("A1").Select
+    ActiveSheet.Paste
+    
+' Pull Created by from ADH enrollment list
+
+    Windows("AdherenceEnrollmentList.xlsx").Activate
+    Range(Cells(4, 6), Cells(4, 6).End(xlDown)).Copy '.Select
+    'Application.CutCopyMode = False
+'Paste into active WB
+
+    Windows("MPRStoSFDC" & Format(Date, "yyyymmdd") & ".xlsm").Activate
+    Range("E1").Select
+    ActiveSheet.Paste
+    
+'modify date format
+
+    Columns("E:E").Select
+    Selection.NumberFormat = "m/d/yyyy"
+    
+'Pull Id, Created date, created by from MPRS Recipient report
+    
+    Windows("MPRS_Recipient.csv").Activate
+    Range("D:D,L:L,M:M").Copy
+    'Application.CutCopyMode = False
+'Paste into active WB
+    
+    Windows("MPRStoSFDC" & Format(Date, "yyyymmdd") & ".xlsm").Activate
+    Range("B1").Select
+    ActiveSheet.Paste
+    
+'Count number of rows & column
+    mylastRow = Range(Cells(1, 2), Cells(1, 2).End(xlDown)).Count
+    myRow = Range(Cells(1, 1), Cells(1, 1).End(xlDown)).Count
+'Loop each row in column A and B to check duplicate values & highlight them.
+
+    'If both columns return No Match turns red
+    For i = 2 To myRow
+         Set myRange = Range(Cells(i, 1), Cells(mylastRow, 2))
+         'For Each myCell In myRange
+             If WorksheetFunction.CountIf(myRange, Cells(i, 1).Value) = 1 Then
+             Cells(i, 1).Interior.ColorIndex = 3
+             End If
+             'Match on both systems turn Green
+             If WorksheetFunction.CountIf(myRange, Cells(i, 1).Value) > 1 Then
+            ' myCell.Interior.ColorIndex = 4  ' \\Could remove this
+             'ID matches but it was not created within the same day by int user will turn Magenta
+                 Mprs_Date = Cells(i, 5)
+                 Sfdc_Date = Cells(Application.WorksheetFunction.Match(Cells(i, 1).Value, Columns("B:B"), 0), 4)
+                 If (Sfdc_Date - Mprs_Date) <> 0 Then
+                     Cells(i, 1).Interior.ColorIndex = 7
+                 End If
+             End If
+             'Next
+             'if a column has duplicate IDs it will return yellow
+                 'column A
+        Set myRangeA = Range(Cells(i, 1), Cells(myRow, 1))
+             'For Each myCell In myRangeA
+             If WorksheetFunction.CountIf(myRangeA, Cells(i, 1).Value) > 1 Then
+             Cells(i, 1).Interior.ColorIndex = 6
+             End If
+             'Next
+                 'column B
+        Set myRangeB = Range(Cells(i, 2), Cells(myRow, 2))
+             'For Each myCell In myRangeB
+             If WorksheetFunction.CountIf(myRangeB, Cells(i, 2).Value) > 1 Then
+             Cells(i, 2).Interior.ColorIndex = 6
+             End If
+    Next
+ 
+'Autofit columns
+ 
+    Columns("A:E").EntireColumn.AutoFit
+'Application.ScreenUpdating = True
+End Sub
+Sub test()
+ For i = 2 To myRow
+         Set myRange = Range(Cells(i, 1), Cells(mylastRow, 2))
+         'For Each myCell In myRange
+             If WorksheetFunction.CountIf(myRange, Cells(i, 1).Value) = 1 Then
+             Cells(i, 1).Interior.ColorIndex = 3
+             End If
+             'Match on both systems turn Green
+             If WorksheetFunction.CountIf(myRange, Cells(i, 1).Value) > 1 Then
+            ' myCell.Interior.ColorIndex = 4  ' \\Could remove this
+             'ID matches but it was not created within the same day by int user will turn Magenta
+                 Mprs_Date = Cells(i, 5)
+                 Sfdc_Date = Cells(Application.WorksheetFunction.Match(Cells(i, 1).Value, Columns("B:B"), 0), 4)
+                 If (Sfdc_Date - Mprs_Date) <> 0 Then
+                     Cells(i, 1).Interior.ColorIndex = 7
+                 End If
+             End If
+             'Next
+             'if a column has duplicate IDs it will return yellow
+                 'column A
+        Set myRangeA = Range(Cells(i, 1), Cells(myRow, 1))
+             'For Each myCell In myRangeA
+             If WorksheetFunction.CountIf(myRangeA, Cells(i, 1).Value) > 1 Then
+             Cells(i, 1).Interior.ColorIndex = 6
+             End If
+             'Next
+                 'column B
+        Set myRangeB = Range(Cells(i, 2), Cells(myRow, 2))
+             'For Each myCell In myRangeB
+             If WorksheetFunction.CountIf(myRangeB, Cells(i, 2).Value) > 1 Then
+             Cells(i, 2).Interior.ColorIndex = 6
+             End If
+    Next
+End Sub
+Sub SFDCtoMPRS()
+
+'Declare All Variables
+Dim myCell As Range
+Dim myRow As Long
+Dim mylastRow As Long
+Dim myidRow As Long
+Dim myRange As Range
+Dim myCol As Long
+Dim i As Long
+Dim wb As Workbook
+Dim SharepointAddress As String
+Dim LocalAddress As String
+Dim objNet As Object
+Dim FS As Object
+
+'open new WB
+Set wb = Workbooks.Add
+' Where you will enter Sharepoint location path
+SharepointAddress = ""
+'Save File
+wb.SaveAs Filename:=SharepointAddress & "SFDCtoMPRS" & Format(Date, "yyyymmdd") & ".xlsm", FileFormat:=52
+
+' Pull ID from ADH enrollment list
+
+    Windows("AdherenceEnrollmentList.xlsx").Activate
+    Range(Cells(4, 1), Cells(4, 1).End(xlDown)).Copy
+
+'Paste into active WB
+    
+    Windows("SFDCtoMPRS" & Format(Date, "yyyymmdd")).Activate
+    Range("D1").Select
+    ActiveSheet.Paste
+    
+' Pull Created by from CSX ADH enrollment list
+
+    Windows("CSXADHEnrollment.csv").Activate
+    Range(Cells(1, 7), Cells(1, 7).End(xlDown)).Copy '.Select
+
+'Paste into active WB
+
+    Windows("SFDCtoMPRS" & Format(Date, "yyyymmdd")).Activate
+    Range("A1").Select
+    ActiveSheet.Paste
+    
+    
+'Pull Id from CSX MPRS Recipient ID report
+    
+    Windows("MPRS_Recipient.csv").Activate
+    Range("D:D,A:A").Copy
+    'Application.CutCopyMode = False
+'Paste into active WB
+    
+
+    Windows("SFDCtoMPRS" & Format(Date, "yyyymmdd")).Activate
+    Range("B1").Select
+    ActiveSheet.Paste
+    
+'Count number of rows & column
+    mylastRow = Range(Cells(1, 2), Cells(1, 2).End(xlDown)).Count
+    myRow = Range(Cells(1, 1), Cells(1, 1).End(xlDown)).Count
+    myidRow = Range(Cells(1, 4), Cells(1, 4).End(xlDown)).Count
+'Loop each row in column A and B to check duplicate values & highlight them.
+
+    'If both columns return No Match turns red
+    For i = 2 To myRow
+    Set myRange = Range(Cells(2, 1), Cells(mylastRow, 2))
+    If WorksheetFunction.CountIf(myRange, Cells(i, 1).Value) = 1 Then
+    Cells(i, 1).Interior.ColorIndex = 3
+    End If
+    Next
+
+
+    For i = 2 To myidRow
+    Set myRange = Range(Cells(2, 3), Cells(mylastRow, 4))
+    If WorksheetFunction.CountIf(myRange, (Cells(i, 4).Value)) = 1 Then
+    Cells(i, 4).Interior.ColorIndex = 3
+    End If
+    Next
+    
+
+'Autofit columns
+ 
+   ' Columns("A:E").EntireColumn.AutoFit
+'Application.ScreenUpdating = True
+End Sub
+
+
